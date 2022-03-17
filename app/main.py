@@ -15,7 +15,8 @@ class MySuperTable(Base):
             for_each=CreateTrigger.FOR_EACH_ROW,
             procedure='delete_old_row',
             arguments=['3'],
-            condition='NEW.id > 5'
+            condition='NEW.id > 5',
+            comment="Some comment"
         )
     ]
 

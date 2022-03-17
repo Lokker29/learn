@@ -16,6 +16,8 @@ class TriggerExtensionMixin:
                     table = inspect(self).selectable
 
                     event.listen(table, "after_create", element.create_ddl_element)
+
+                    # Explicit drop
                     event.listen(table, "before_drop", element.drop_ddl_element)
                 else:
                     # TODO: add some warning or error

@@ -23,7 +23,8 @@ class CreateTrigger(DDLElement):
 
     def __init__(
             self, name, mode, procedure, events, update_of=None, as_constraint=False, from_foreign_table=None,
-            deferrable_mode=None, time_to_check=None, for_each=FOR_EACH_STATEMENT, condition=None, arguments=None
+            deferrable_mode=None, time_to_check=None, for_each=FOR_EACH_STATEMENT, condition=None, arguments=None,
+            comment=None
     ):
         self.name = name
         self.mode = mode
@@ -42,8 +43,10 @@ class CreateTrigger(DDLElement):
 
         self.condition = condition
         self.arguments = arguments or []
+        self.comment = comment
 
 
+# TODO: prevent SQL injections
 @compiles(CreateTrigger, 'postgresql')
 def create_trigger(element, compiler, **kw):
     sql = ['CREATE']
@@ -95,7 +98,13 @@ def create_trigger(element, compiler, **kw):
     function_stmt = f"{element.procedure}({', '.join(element.arguments)})"  # e.g. - some_func('arg1', 'arg2', 'arg3')
     sql.append(function_stmt)
 
-    return ' '.join(sql)
+    stmt = ' '.join(sql) + ';'
+
+    if element.comment:
+        comment = f"COMMENT ON TRIGGER {element.name} ON {element.target.name} IS '{element.comment}';"
+        stmt += ' ' + comment
+
+    return stmt
 
 
 class DropTrigger(DDLElement):
@@ -129,7 +138,7 @@ class Trigger:
     def __init__(
             self, name, mode, procedure, events, update_of=None, as_constraint=False, from_foreign_table=None,
             deferrable_mode=None, time_to_check=None, for_each=CreateTrigger.FOR_EACH_STATEMENT,
-            condition=None, arguments=None,
+            condition=None, arguments=None, comment=None,
             drop_if_exists=False, on_delete=DropTrigger.RESTRICT
     ):
         self.name = name
@@ -148,6 +157,7 @@ class Trigger:
         self.for_each = for_each
         self.condition = condition
         self.arguments = arguments
+        self.comment = comment
 
         self.drop_if_exists = drop_if_exists
         self.on_delete = on_delete
@@ -166,7 +176,8 @@ class Trigger:
             time_to_check=self.time_to_check,
             for_each=self.for_each,
             condition=self.condition,
-            arguments=self.arguments
+            arguments=self.arguments,
+            comment=self.comment
         )
 
     @property
